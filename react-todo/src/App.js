@@ -96,25 +96,30 @@ const [todo, setTodo] = useState();
 
   return (
     <>
-      <h1>ToDo App</h1>
 
-      <div>
-        <input type='text' value={todo || ''} onChange={(e) => setTodo(e.target.value)} placeholder='ToDo'></input>
-        <button onClick={addTodo}>ADD</button>
+      <div className='container'>
+        <h1>ToDo App</h1>
+        <div className='row searchBox'>
+          <input type='text' value={todo || ''} onChange={(e) => setTodo(e.target.value)} placeholder='ToDo'></input>
+          <button onClick={addTodo}>Add</button>
+        </div>
+
+        <div className='row'>
+          {todos && (
+            <ul className='todos'>
+              {todos.map(todo => (
+                <li key={todo.id} className={todo.done == 1 ? 'done' : ''}>
+                  <span onClick={() => doneTodo(todo.id, todo.done)}>
+                    {todo.todo}
+                  </span>
+                  <button onClick={() => deleteTodo(todo.id)} className='deleteButton'>Delete</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
-      {todos && (
-        <ul className='todos'>
-          {todos.map(todo => (
-            <li key={todo.id} className={todo.done == 1 ? 'done' : ''}>
-              <span onClick={() => doneTodo(todo.id, todo.done)}>
-                {todo.todo}
-              </span>
-              <button onClick={() => deleteTodo(todo.id)}>Delete</button>
-            </li>
-          ))}
-        </ul>
-      )}
     </>
   );
 }

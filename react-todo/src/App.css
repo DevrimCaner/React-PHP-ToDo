@@ -36,8 +36,87 @@
     transform: rotate(360deg);
   }
 }
+*{
+  transition: all 0.2s;
+}
+h1{
+  color: #0984e3;
+}
+.container{
+  margin-left: 50px;
+  margin-right: 50px;
+  text-align: center;
+}
+
+.searchBox input{
+  margin-right: 10px;
+  width: calc(100% - 110px);
+}
+
+button{
+  background-color: #0984e3;
+  border: solid 2px #0984e3;
+  color: #dfe6e9;
+  border-radius: 3px;
+  padding: 8px 12px;
+  font-size: 22x;
+  cursor: pointer;
+}
+button:hover{
+  background-color: #74b9ff;
+}
+.deleteButton{
+  float: right;
+  background-color: transparent;
+  color: #ff7675;
+  border: solid 2px transparent;
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-size: 14x;
+}
+
+.deleteButton:hover{
+  color: #d63031;
+  border: solid 2px transparent;
+  background-color: transparent;
+}
+
+input{
+  border: solid 2px #0984e3;
+  border-radius: 3px;
+  color: #2d3436;
+  padding: 8px 12px;
+  font-size: 22x;
+}
+
+input:focus{
+  border: solid 2px red;
+}
+
+.todos{
+  list-style: none;
+  padding: 10px;
+}
+
+.todos li{
+  border-radius: 3px;
+  background-color: #dfe6e9;
+  margin-bottom: 10px;
+  color: #2d3436;
+  padding: 10px 10px;
+  height: 30px;
+  text-align: start;
+  vertical-align: middle;
+}
+.todos li:hover{
+  background-color: #b2bec3;
+}
 
 li.done{
   text-decoration: line-through;
-  color: #999;
+  color: #00b894;
+}
+
+li span{
+  cursor: pointer;
 }

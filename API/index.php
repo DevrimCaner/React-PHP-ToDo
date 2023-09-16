@@ -25,13 +25,13 @@ switch($action){
         $todo = $_POST['todo'];
         $data = [
             'todo' => $todo,
-            'type' => 1,
+            'user' => 1,
             'done' => 0,
         ];
 
         $query = $db->prepare("INSERT INTO todos SET 
         todo = :todo,
-        type = :type,
+        user_id = :user,
         done = :done");
         $insert = $query->execute($data);
         if($insert){

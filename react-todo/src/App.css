@@ -52,6 +52,20 @@ h1{
   margin-right: 10px;
   width: calc(100% - 110px);
 }
+.loginBox{
+  background-color: #dfe6e9;
+  border-radius: 5px;
+  padding: 70px 0px;
+  margin-left: 25%;
+  margin-top: 10%;
+  width: 50%;
+}
+.loginBox .row{
+  margin-top: 10px;
+}
+.loginBox h2{
+  color: #636e72;
+}
 
 button{
   background-color: #0984e3;

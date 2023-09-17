@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import './App.css';
 
 function Home() {
-const [todos, setTodos] = useState();
-const [todo, setTodo] = useState();
+  const [todos, setTodos] = useState();
+  const [todo, setTodo] = useState();
 
   useEffect(() =>{
     const formData = new FormData();
@@ -13,7 +13,15 @@ const [todo, setTodo] = useState();
       body: formData
     })
     .then(res => res.json())
-    .then(data => setTodos(data));
+    .then(data => {
+      console.log(data)
+      if(data.error){
+        //alert(data.error);
+      }
+      else{
+        setTodos(data)
+      }
+    });
   },[]);
 
   const addTodo = () => {

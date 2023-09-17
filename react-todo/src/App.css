@@ -60,6 +60,9 @@ h1{
   margin-top: 10%;
   width: 50%;
 }
+.loginMessage{
+  color: #6c5ce7;
+}
 .loginBox .row{
   margin-top: 10px;
 }

@@ -1,27 +1,42 @@
 import { useEffect, useState } from 'react';
+import {useNavigate} from 'react-router-dom';
+import axios from 'axios';
 import './App.css';
+import Navbar from './navbar';
 
 function Home() {
+  const navigate = useNavigate();
   const [todos, setTodos] = useState();
   const [todo, setTodo] = useState();
+  const loggedIn = sessionStorage.getItem("loggedIn");
+  const user = sessionStorage.getItem("user");
+  const passHash = sessionStorage.getItem("passHash");
 
   useEffect(() =>{
-    const formData = new FormData();
-    formData.append('action', 'todos');
-    fetch(`${process.env.REACT_APP_ENDPOINT}`,{
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log(data)
-      if(data.error){
-        //alert(data.error);
-      }
-      else{
-        setTodos(data)
-      }
-    });
+    // Check LoggedIn
+    if(!loggedIn){
+      navigate('/login');
+      return;
+    }
+    //Post
+    axios
+      .post(`${process.env.REACT_APP_ENDPOINT}`,{
+          action: 'todos',
+          user: user,
+          password: passHash
+      })
+      .then((response)=>{
+        console.log(response.data)
+          if(response.data.error){
+              console.log(response.data.error);
+          }
+          else{
+              setTodos(response.data);
+          }
+      })
+      .catch((error)=>{
+          console.log(error);
+      });
   },[]);
 
   const addTodo = () => {
@@ -29,24 +44,27 @@ function Home() {
       alert('Please fill the todo input');
       return;
     }
-    const formData = new FormData();
-    formData.append('todo', todo);
-    formData.append('action', 'add-todo');
-    fetch(`${process.env.REACT_APP_ENDPOINT}`,{
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log(data)
-      if(data.error){
-        alert(data.error);
-      }
-      else{
-        setTodos([data, ...todos]);
-        setTodo('');
-      }
-    });
+
+    //Post
+    axios
+      .post(`${process.env.REACT_APP_ENDPOINT}`,{
+          action: 'add-todo',
+          todo: todo,
+          user: user,
+          password: passHash
+      })
+      .then((response)=>{
+          if(response.data.error){
+              console.log(response.data.error);
+          }
+          else{
+            setTodos([response.data, ...todos]);
+            setTodo('');
+          }
+      })
+      .catch((error)=>{
+          console.log(error);
+      });
   };
 
   const deleteTodo = todoId => {
@@ -54,53 +72,61 @@ function Home() {
       alert('Id missing');
       return;
     }
-    const formData = new FormData();
-    formData.append('id', todoId);
-    formData.append('action', 'delete-todo');
-    fetch(`${process.env.REACT_APP_ENDPOINT}`,{
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log(data);
-      if(data.error){
-        alert(data.error);
-      }
-      else{
-        setTodos(todos.filter(todo => todo.id != todoId ));
-      }
-    });
+
+    //Post
+    axios
+      .post(`${process.env.REACT_APP_ENDPOINT}`,{
+          action: 'delete-todo',
+          id: todoId,
+          user: user,
+          password: passHash
+      })
+      .then((response)=>{
+          if(response.data.error){
+              console.log(response.data.error);
+          }
+          else if(response.data.deleted){
+            setTodos(todos.filter(todo => todo.id != todoId ));
+          }
+          else{
+            console.log(response.data);
+          }
+      })
+      .catch((error)=>{
+          console.log(error);
+      });
   };
 
   const doneTodo = (todoId, todoDone) => {
-    console.log(todoDone)
     todoDone = todoDone === 1 ? 0 : 1;
-    console.log(todoDone)
-    const formData = new FormData();
-    formData.append('id', todoId);
-    formData.append('done', todoDone);
-    formData.append('action', 'done-todo');
-    fetch(`${process.env.REACT_APP_ENDPOINT}`,{
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log(data);
-      if(data.error){
-        alert(data.error);
-      }
-      else{
-        setTodos(data);
-      }
-    });
+    //Post
+    axios
+      .post(`${process.env.REACT_APP_ENDPOINT}`,{
+          action: 'done-todo',
+          id: todoId,
+          done: todoDone,
+          user: user,
+          password: passHash
+      })
+      .then((response)=>{
+          if(response.data.error){
+              console.log(response.data.error);
+          }
+          else{
+            setTodos(response.data);
+          }
+      })
+      .catch((error)=>{
+          console.log(error);
+      });
   };
 
   
 
   return (
-      <div className='container'>
+    <>
+    <Navbar />
+    <div className='container'>
         <h1>ToDo App</h1>
         <div className='row searchBox'>
           <input type='text' value={todo || ''} onChange={(e) => setTodo(e.target.value)} placeholder='ToDo'></input>
@@ -122,6 +148,7 @@ function Home() {
           )}
         </div>
       </div>
+    </>
   );
 }
 

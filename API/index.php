@@ -1,8 +1,28 @@
 
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept'); 
+header("Content-Type: application/json; charset=UTF-8");
+
 session_start();
+
+// Get Data
+$data = json_decode(file_get_contents('php://input'), true);
+
+// Check Data exist
+if(!$data){
+    $data['error'] = 'Data not found';
+    echo json_encode($data);
+    exit;
+}
+// Check Action
+if(!isset($data['action'])){
+    $data['error'] = 'Action not found';
+    echo json_encode($data);
+    exit;
+}
+// Set Action
+$action = $data['action'];
 
 $dbHost = 'localhost';
 $dbName = 'todo';
@@ -15,52 +35,61 @@ catch(PDOExeception $e){
     die($e->getMessage());
 }
 
-function LoginRequired(){
-    $data['error'] = 'Login Required!';
-    echo json_encode($data);
-}
-
-$action = $_POST['action'];
-
 switch($action){
     // Auth Actions
     case 'login':
-        $user = $_POST['user'];
-        $password = $_POST['password'];
-
-        if($user == 'demo' && $password == 'demo'){
-            $_SESSION['user_id'] = 1;
-            $data['success'] = 'Login successful fowarding in 2 seconds ... / ' . $_SESSION['user_id'];
-            echo json_encode($data);
-        }
-        else{
+        $user = $data['user'];
+        $password = $data['password'];
+        $user = CheckCredentials($user, $password);
+        if(!$user){
             $data['error'] = 'Username or Password Invalid';
             echo json_encode($data);
+            exit;
         }
+        // Login Successful
+        $_SESSION['user'] = $user;
+        $_SESSION['loggedIn'] = true;
+        $response['user'] = $user;
+        $response['success'] = 'Login successful fowarding ...';
+        echo json_encode($response);
     break;
     case 'logout':
         session_destroy();
-        $data['success'] = 'Logout successful!';
-        echo json_encode($data);
+        $response['success'] = 'Logout successful!';
+        echo json_encode($response);
     break;
     // CRUD Actions
     // List ToDos
     case 'todos':
-        if(!isset($_SESSION['user_id'])){
-            return LoginRequired();
+        $user = $data['user'];
+        $password = $data['password'];
+        $user = CheckCredentials($user, $password);
+        if(!$user){
+            ExitCredentialError();
         }
-        $query = $db->query('SELECT * FROM todos')->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode($query);
+        $todos = GetUserTodos($user['id']);
+
+        echo json_encode($todos);
     break;
     // Add New ToDos
     case 'add-todo':
-        if(!$_SESSION['user_id']){
-            return LoginRequired();
+        // Data Check
+        if(!isset($data['todo'])){
+            $response['error'] = 'Id missing';
+            echo json_encode($response);
+            exit;
         }
-        $todo = $_POST['todo'];
-        $data = [
+        $todo = $data['todo'];
+
+        $user = $data['user'];
+        $password = $data['password'];
+        $user = CheckCredentials($user, $password);
+        if(!$user){
+            ExitCredentialError();
+        }
+        $response = [
             'todo' => $todo,
-            'user' => 1,
+            'user' => $user['id'],
             'done' => 0,
         ];
 
@@ -68,81 +97,119 @@ switch($action){
         todo = :todo,
         user_id = :user,
         done = :done");
-        $insert = $query->execute($data);
+        $insert = $query->execute($response);
         if($insert){
-            $data['id'] = $db->lastInsertId();
-            echo json_encode($data);
+            $response['id'] = $db->lastInsertId();
         }
         else{
-            $data['error'] = 'Error in inserting data';
-            echo json_encode($data);
+            $response['error'] = 'Error in inserting data';
         }
+        echo json_encode($response);
     break;
     // Change Done ToDos
     case 'done-todo':
-        if(!$_SESSION['user_id']){
-            return LoginRequired();
-        }
-        $id = $_POST['id'];
-        $done = $_POST['done'];
-        $data = [];
+        // Data Check
+        $id = $data['id'];
+        $done = $data['done'];
         if(!$id){
-            $data['error'] = 'Id missing';
-            echo json_encode($data);
-            return;
+            $response['error'] = 'Id missing';
+            echo json_encode($response);
+            exit;
         }
         if(!is_numeric($id)){
-            $data['error'] = 'Id invalid';
-            echo json_encode($data);
-            return;
+            $response['error'] = 'Id invalid';
+            echo json_encode($response);
+            exit;
         }
-
-        
+        // Credentials Check
+        $user = $data['user'];
+        $password = $data['password'];
+        $user = CheckCredentials($user, $password);
+        if(!$user){
+            ExitCredentialError();
+        }
+        // Update
         $query = $db->prepare('UPDATE todos SET done = :done WHERE id = :id');
         $update = $query->execute([
             'id' => $id,
             'done' => $done
         ]);
         if($update){
-            $query = $db->query('SELECT * FROM todos')->fetchAll(PDO::FETCH_ASSOC);
-            echo json_encode($query);
-            return;
+            $response = GetUserTodos($user['id']);
         }
         else{
-            $data['error'] = 'Error in updating data' . $done;
-            echo json_encode($data);
-            return;
+            $response['error'] = 'Error in updating data' . $done;
         }
+        echo json_encode($response);
     break;
     // Delete ToDos
     case 'delete-todo':
-        if(!$_SESSION['user_id']){
-            return LoginRequired();
-        }
-        $id = $_POST['id'];
-        $data = [];
+        // Data Check
+        $id = $data['id'];
         if(!$id){
-            $data['error'] = 'Id missing';
-            echo json_encode($data);
-            return;
+            $response['error'] = 'Id missing';
+            echo json_encode($response);
+            exit;
         }
         if(!is_numeric($id)){
-            $data['error'] = 'Id invalid';
-            echo json_encode($data);
-            return;
+            $response['error'] = 'Id invalid';
+            echo json_encode($response);
+            exit;
+        }
+        // Credentials Check
+        $user = $data['user'];
+        $password = $data['password'];
+        $user = CheckCredentials($user, $password);
+        if(!$user){
+            ExitCredentialError();
         }
 
-        $delete = $db->exec('DELETE FROM todos WHERE id = "'. $id . '"');
+        $query = $db->prepare('DELETE FROM todos WHERE id = :id AND user_id = :userId');
+        $delete = $query->execute([
+            'id' => $id,
+            'userId' => $user['id']
+        ]);
+
         if($delete){
-            $data['deleted'] = 'success';
-            echo json_encode($data);
+            $response['deleted'] = 'success';
+            echo json_encode($response);
             return;
         }
         else{
-            $data['error'] = 'Error in deleting data';
-            echo json_encode($data);
+            $response['error'] = 'Error in deleting data';
+            echo json_encode($response);
             return;
         }
     break;
+}
+// CUSTOM FUNCTIONS
+function CheckCredentials($u, $p){
+    // Check Password is md5 Hash
+    if(strlen($p) != 32){
+        return null;
+    }
+    global $db;
+    $query = $db->prepare("SELECT * FROM users WHERE name = :user AND password = :pass");
+    $query->execute([
+        'user' => $u,
+        'pass' => $p
+
+    ]);
+    $user = $query->fetch(PDO::FETCH_ASSOC);
+    return $user;
+}
+function ExitCredentialError(){
+    $response['error'] = 'Credentials Failed';
+    echo json_encode($response);
+    exit;
+}
+function GetUserTodos($userId){
+    global $db;
+    $query = $db->prepare("SELECT * FROM todos WHERE user_id = :userId");
+        $query->execute([
+            'userId' => $userId
+        ]);
+    $todos = $query->fetchAll(PDO::FETCH_ASSOC);
+    return $todos;
 }
 ?>

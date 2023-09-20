@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import {useNavigate} from 'react-router-dom';
+import axios from 'axios';
+import md5 from 'md5';
 import './App.css';
 
 function Login() {
@@ -18,31 +20,36 @@ function Login() {
             setMessage("Password is blank");
             return;
         }
-        const formData = new FormData();
-        formData.append('user', user);
-        formData.append('password', password);
-        formData.append('action', 'login');
-        fetch(`${process.env.REACT_APP_ENDPOINT}`,{
-          method: 'POST',
-          body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-          console.log(data)
-          if(data.error){
-            setMessage(data.error);
-          }
-          else if(data.success){
-            setMessage(data.success);
-            // Foward in 2 seconds
-            setTimeout(() => {
-                navigate('/');
-            }, 2000);
-        }
-        else{
-            setMessage('Unknown Error!');
-          }
-        });
+        let passHash = md5(password);
+        // Send Post
+        axios
+            .post(`${process.env.REACT_APP_ENDPOINT}`,{
+                action: 'login',
+                user: user,
+                password: passHash
+            })
+            .then((response)=>{
+                if(response.data.error){
+                    setMessage(response.data.error);
+                }
+                else if(response.data.success){
+                    setMessage(response.data.success);
+                    sessionStorage.setItem('loggedIn', true);
+                    sessionStorage.setItem('user', user);
+                    sessionStorage.setItem('passHash', passHash);
+                    // Foward
+                    setTimeout(() => {
+                        navigate('/');
+                    }, 1000);
+                }
+                else{
+                    console.log(response.data);
+                    setMessage('Unknown Error.');
+                }
+            })
+            .catch((error)=>{
+                console.log(error);
+            });
       };
 
     return (
